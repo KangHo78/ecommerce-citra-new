@@ -4,7 +4,7 @@
 
 @section('content')
     @php
-        $activeTab = in_array(request('tab', 'store'), ['store', 'seo', 'location', 'payment', 'tax', 'whatsapp', 'social', 'boqi'], true) ? request('tab', 'store') : 'store';
+        $activeTab = in_array(request('tab', 'store'), ['store', 'seo', 'location', 'payment', 'tax', 'erp', 'whatsapp', 'social', 'boqi'], true) ? request('tab', 'store') : 'store';
         $logoPath = (string) ($storeSettings['store_logo_path'] ?? '');
         $logoUrl = $logoPath !== '' ? asset('storage/' . ltrim($logoPath, '/')) : null;
         $waGatewayRoutes = [
@@ -65,6 +65,11 @@
                             class="settings-tab {{ $activeTab === 'tax' ? 'active' : '' }} w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-all text-left">
                             <i data-lucide="percent" class="w-[17px] h-[17px]"></i>
                             Pajak / PPN
+                        </button>
+                        <button type="button" onclick="showTab('erp')" id="nav-erp"
+                            class="settings-tab {{ $activeTab === 'erp' ? 'active' : '' }} w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-all text-left">
+                            <i data-lucide="plug" class="w-[17px] h-[17px]"></i>
+                            Koneksi ERP
                         </button>
                         <button type="button" onclick="showTab('whatsapp')" id="nav-whatsapp"
                             class="settings-tab {{ $activeTab === 'whatsapp' ? 'active' : '' }} w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-all text-left">
@@ -470,6 +475,68 @@
 
                         <div class="flex justify-end mt-5">
                             <button type="submit" class="px-5 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">Simpan FAQ IBOQ</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="tab-erp" class="settings-content {{ $activeTab === 'erp' ? '' : 'hidden' }}">
+                    @php($inputClass = 'w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-200')
+                    <form method="POST" action="{{ route('pages.settings.update') }}"
+                        class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                        @csrf
+                        <input type="hidden" name="section" value="erp">
+
+                        <h2 class="font-bold text-slate-800 dark:text-white mb-1">Koneksi ERP</h2>
+                        <p class="text-xs text-slate-400 mb-6">ERP DK menjadi sumber barang, harga, foto, dan stok untuk perusahaan yang sedang aktif ({{ $activeCompany?->name ?? '-' }}). Saat nyala, barang perusahaan ini diubah di ERP, bukan di toko. Kunci API dibuat di ERP: Pengaturan › Integrasi API.</p>
+
+                        <div class="space-y-4">
+                            <label class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-4 py-3">
+                                <input type="hidden" name="erp_enabled" value="0">
+                                <input type="checkbox" name="erp_enabled" value="1" class="accent-blue-600" {{ old('erp_enabled', $erp['enabled'] ? '1' : '0') === '1' ? 'checked' : '' }}>
+                                <span>
+                                    <span class="block text-sm font-semibold text-slate-700 dark:text-slate-200">Hubungkan ke ERP</span>
+                                    <span class="block text-xs text-slate-400">Barang dan stok disinkron otomatis (barang tiap 15 menit, stok tiap 5 menit, dan seketika lewat webhook).</span>
+                                </span>
+                            </label>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Alamat API ERP</label>
+                                <input type="url" name="erp_base_url" maxlength="255" placeholder="https://erp.boq.co.id/api/v1" value="{{ old('erp_base_url', $erp['base_url']) }}" class="{{ $inputClass }}">
+                                @error('erp_base_url')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Kunci API</label>
+                                    <input type="password" name="erp_api_key" autocomplete="off" placeholder="{{ $erp['has_key'] ? 'Tersimpan, kosongkan bila tidak diganti' : 'erpdk_…' }}" class="{{ $inputClass }}">
+                                    @error('erp_api_key')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Rahasia webhook</label>
+                                    <input type="password" name="erp_webhook_secret" autocomplete="off" placeholder="{{ $erp['has_webhook_secret'] ? 'Tersimpan, kosongkan bila tidak diganti' : 'Dari ERP › Integrasi API › Webhook' }}" class="{{ $inputClass }}">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Id level harga (opsional)</label>
+                                    <input type="number" name="erp_price_level_id" min="1" value="{{ old('erp_price_level_id', $erp['price_level_id']) }}" placeholder="Kosong = harga dasar" class="{{ $inputClass }}">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Kode gudang sumber stok (opsional)</label>
+                                    <input type="text" name="erp_warehouse_codes" maxlength="255" value="{{ old('erp_warehouse_codes', $erp['warehouse_codes']) }}" placeholder="Kosong = semua gudang; mis. GD-PST, GD-SBY" class="{{ $inputClass }}">
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                Alamat webhook untuk ERP: <code class="select-all">{{ route('erp.webhook', ['company' => $activeCompany?->slug ?? '-']) }}</code>
+                            </p>
+                            @if ($erp['synced_at'])
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Sinkron terakhir: {{ \Illuminate\Support\Carbon::parse($erp['synced_at'])->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</p>
+                            @endif
+                            @if (!empty($erp['last_error']['message']))
+                                <p class="text-xs text-red-600">Galat terakhir: {{ $erp['last_error']['message'] }}</p>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-wrap justify-end gap-2 mt-5">
+                            <button type="submit" formaction="{{ route('pages.settings.erp-test') }}" class="px-5 py-2.5 text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Tes koneksi</button>
+                            <button type="submit" formaction="{{ route('pages.settings.erp-sync') }}" class="px-5 py-2.5 text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Sinkron sekarang</button>
+                            <button type="submit" class="px-5 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">Simpan koneksi</button>
                         </div>
                     </form>
                 </div>
