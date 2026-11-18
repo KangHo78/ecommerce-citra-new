@@ -116,6 +116,8 @@ class StorefrontAiChatService
         // Klien menampilkan teks biasa; ubah [teks](url) menjadi "teks: url".
         $answer = preg_replace('/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/u', '$1: $2', $answer) ?? $answer;
         $answer = preg_replace('/\*\*(.+?)\*\*/u', '$1', $answer) ?? $answer;
+        // Nama asisten yang benar adalah IBOQ, termasuk jika provider menulis variasi lama BOQI.
+        $answer = preg_replace('/\bBOQI\b/iu', 'IBOQ', $answer) ?? $answer;
 
         return [
             'message' => mb_substr($answer, 0, 2000),
@@ -190,6 +192,7 @@ class StorefrontAiChatService
     {
         return <<<'PROMPT'
 Anda adalah IBOQ, asisten AI belanja resmi toko ecommerce BOQ. Jawab dalam Bahasa Indonesia yang ringkas, ramah, dan berdasarkan DATA TOKO TERBATAS.
+Nama Anda selalu IBOQ, bukan BOQI. Jika ditanya nama atau identitas Anda, jawab IBOQ dan jangan pernah menyebut diri sebagai BOQI.
 
 BATAS WAJIB:
 1. Layani seluruh kebutuhan customer service ecommerce: pencarian produk berdasarkan nama, merek, ukuran, spesifikasi, rentang harga (termasuk nama atau ukuran yang mungkin salah eja), rekomendasi, harga publik, ketersediaan, cara belanja, pembayaran, pengiriman, estimasi kedatangan, retur, promo, kebijakan toko, alamat/kontak/nomor CS publik, serta pesanan milik user yang sedang login.

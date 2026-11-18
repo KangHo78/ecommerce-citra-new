@@ -19,11 +19,17 @@ class StorefrontAiChatController extends Controller
         ]);
 
         try {
-            return response()->json($chat->chat(
+            $result = $chat->chat(
                 trim($validated['message']),
                 $validated['history'] ?? [],
                 $request->user()
-            ));
+            );
+
+            if (isset($result['message']) && is_string($result['message'])) {
+                $result['message'] = preg_replace('/\bBOQI\b/iu', 'IBOQ', $result['message']) ?? $result['message'];
+            }
+
+            return response()->json($result);
         } catch (RuntimeException) {
             return response()->json([
                 'message' => 'IBOQ sedang tidak tersedia. Silakan coba lagi beberapa saat.',

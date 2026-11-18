@@ -74,6 +74,21 @@ class StorefrontAiChatTest extends TestCase
         });
     }
 
+    public function test_provider_cannot_return_the_old_boqi_name(): void
+    {
+        Http::fake([
+            'https://koboi.example/v1/chat/completions' => Http::response([
+                'choices' => [['message' => ['content' => '{"in_scope":true,"answer":"Nama saya BOQI, asisten belanja Anda."}']]],
+            ]),
+        ]);
+
+        $this->postJson(route('storefront.chat-ai'), [
+            'message' => 'Siapa nama kamu?',
+        ])->assertOk()
+            ->assertJsonPath('message', 'Nama saya IBOQ, asisten belanja Anda.')
+            ->assertJsonMissing(['message' => 'Nama saya BOQI, asisten belanja Anda.']);
+    }
+
     public function test_invalid_provider_format_does_not_clear_the_conversation(): void
     {
         Http::fake([
