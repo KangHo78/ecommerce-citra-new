@@ -9,7 +9,7 @@
     <section id="storefrontAiPanel" class="mb-3 hidden h-[min(32rem,calc(100vh-8rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="false" aria-labelledby="storefrontAiTitle">
         <header class="flex items-center justify-between bg-[#0a3268] px-4 py-3 text-white">
             <div class="flex min-w-0 items-center gap-2.5">
-                <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/95"><img src="{{ asset('imgs/boqi/boqi-mascot.webp') }}" alt="" class="h-12 w-12 object-contain object-top" /></span>
+                <span class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white/95"><img src="{{ asset('imgs/boqi/iboq-mascot.webp') }}" alt="" class="h-12 w-12 object-contain object-top" /></span>
                 <div>
                     <h2 id="storefrontAiTitle" class="text-base font-bold">IBOQ</h2>
                     <p class="text-xs text-blue-100">Asisten belanja BOQ</p>
@@ -45,7 +45,7 @@
     </section>
 
     <button id="storefrontAiToggle" type="button" class="boqi-glow flex min-h-14 items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-5 text-[#18222d] shadow-[0_10px_35px_rgba(10,50,104,.28)] ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-xl" aria-label="Buka Tanya IBOQ" aria-expanded="false" aria-controls="storefrontAiPanel" data-testid="boqi-launcher">
-        <span class="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-blue-50"><img src="{{ asset('imgs/boqi/boqi-mascot.webp') }}" alt="" class="h-14 w-14 object-contain object-top" /></span>
+        <span class="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-blue-50"><img src="{{ asset('imgs/boqi/iboq-mascot.webp') }}" alt="" class="h-14 w-14 object-contain object-top" /></span>
         <span class="text-base font-bold">Tanya IBOQ</span>
     </button>
 </div>
@@ -99,7 +99,7 @@
                 block.className = role === 'user' ? 'max-w-[85%]' : 'max-w-[92%] space-y-2';
                 if (role === 'assistant') {
                     const avatar = document.createElement('img');
-                    avatar.src = '/imgs/boqi/boqi-mascot.webp';
+                    avatar.src = '/imgs/boqi/iboq-mascot.webp';
                     avatar.alt = '';
                     avatar.className = 'mt-0.5 h-8 w-8 shrink-0 rounded-full border border-blue-100 bg-white object-contain object-top';
                     row.appendChild(avatar);

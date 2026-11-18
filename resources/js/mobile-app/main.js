@@ -17,7 +17,7 @@ if (root) {
     const config = Object.freeze({
         appName: root.dataset.appName || 'Ecommerce Citra',
         logoUrl: root.dataset.logoUrl || '/logo/BOQ.CO.ID/BOQ.CO.ID-1.png',
-        boqiMascotUrl: root.dataset.boqiMascotUrl || '/imgs/boqi/boqi-mascot.webp',
+        boqiMascotUrl: root.dataset.boqiMascotUrl || '/imgs/boqi/iboq-mascot.webp',
         supportWhatsapp: root.dataset.supportWhatsapp || '',
         appVersion: root.dataset.appVersion || 'rollout-6',
         apiBase: root.dataset.apiBase || '/api/mobile/v1',
