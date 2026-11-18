@@ -9,8 +9,10 @@ diambil dari ERP, dan setiap pesanan toko dicatat di ERP. Bawaannya mati; compan
    `stock.read`, `customers.read`, `customers.write`, `sales_orders.read`, `sales_orders.write`, `payments.write`.
    Pengguna integrasi butuh izin buat/konfirmasi/batal SO dan buat DP. Bila harga jual dikunci di ERP, beri juga izin
    ubah harga (harga toko termasuk diskon/flash sale).
-2. Di ERP, buat webhook ke alamat yang tampil di toko (Setting › Koneksi ERP), event `product.changed` dan
-   `stock.changed`, lalu salin rahasianya.
+2. Di ERP, buat webhook ke alamat yang tampil di toko (Setting › Koneksi ERP), event `product.changed`,
+   `stock.changed`, `sales_order.updated`, `sales_delivery.updated`, `sales_delivery.received`,
+   `sales_invoice.updated`, dan `sales_invoice.paid`, lalu salin rahasianya. Kunci API juga butuh
+   `sales_invoices.read` untuk status invoice.
 3. Di toko, Setting › Koneksi ERP: isi alamat API (`https://<erp>/api/v1`), kunci API, rahasia webhook, id level harga
    (kosong = harga dasar), kode gudang sumber stok (pisahkan koma, kosong = semua gudang), dan akun ERP untuk pesanan.
    Klik **Tes koneksi**, lalu **Sinkron sekarang**, lalu nyalakan **Aktifkan**.
@@ -34,3 +36,18 @@ diambil dari ERP, dan setiap pesanan toko dicatat di ERP. Bawaannya mati; compan
   (baris **ERP: …**) dan dikirim ulang otomatis tiap 5 menit (`php artisan erp:push-orders`).
 - Kirim ulang aman: setiap panggilan membawa `Idempotency-Key`, SO dicocokkan lewat nomor pesanan, DP lewat id pembayaran.
 - Pesanan yang sudah lunas lalu dibatalkan (refund) belum dikirim otomatis: catat pengembaliannya di ERP.
+
+## Status pesanan dari ERP
+
+Setiap kabar pesanan dari ERP membuat toko mengambil ulang SO-nya, lalu menyesuaikan transaksi:
+
+| Di ERP | Di toko |
+|---|---|
+| Surat jalan diposting | Status **Kirim**, resi = no. resi surat jalan (kurir sendiri tanpa resi = nomor surat jalan), kurir = ekspedisi surat jalan. Pembeli mendapat pemberitahuan "Pesanan Dalam Perjalanan". No. resi diubah di ERP = resi toko ikut berubah. |
+| Semua barang terkirim dan setiap surat jalan punya bukti terima | Status **Selesai**, poin loyalti diberikan seperti saat pembeli menandai pesanan diterima. |
+| SO dibatalkan di ERP sebelum pesanan lunas | Status **Dibatalkan**, stok, promo, dan poin yang ditahan dilepas. Pesanan yang sudah lunas tidak dibatalkan otomatis: urus refund di ERP. |
+| Invoice diposting / lunas | Nomor invoice ERP dan tanda lunas tampil di detail transaksi admin. |
+
+Setiap perubahan dicatat di riwayat status transaksi. Bila webhook terlewat, `php artisan erp:push-orders --refresh`
+(otomatis tiap jam) mengambil ulang status SO pesanan yang masih berjalan (60 hari terakhir).
+
