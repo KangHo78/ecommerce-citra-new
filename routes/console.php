@@ -51,6 +51,8 @@ Schedule::command(CheckOperations::class)->everyFiveMinutes()->withoutOverlappin
 Schedule::command(ReleaseExpiredCommerceReservations::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 // ERP DK = sumber katalog: barang/harga/foto berubah tiap 15 menit, stok tiap 5 menit (webhook mempercepat).
 Schedule::command(SyncErpCatalog::class)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+// Tarik penuh tiap jam: barang yang dihapus di ERP tanpa webhook ikut terhapus/disembunyikan.
+Schedule::command(SyncErpCatalog::class, ['--full'])->hourly()->withoutOverlapping()->onOneServer();
 Schedule::command(SyncErpCatalog::class, ['--stock'])->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command(PushErpOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command(PushErpOrders::class, ['--refresh'])->hourly()->withoutOverlapping()->onOneServer();

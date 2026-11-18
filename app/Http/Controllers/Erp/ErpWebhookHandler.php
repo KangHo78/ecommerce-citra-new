@@ -16,6 +16,7 @@ class ErpWebhookHandler
     {
         match ($event) {
             'product.changed' => $this->sync->run($erp),
+            'product.deleted' => $this->sync->remove($erp, (array) ($data['product_ids'] ?? [])),
             'stock.changed' => $this->stock($erp, (array) ($data['skus'] ?? [])),
             default => app(ErpOrderEvents::class)->handle($erp, $event, $data),
         };
