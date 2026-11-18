@@ -360,6 +360,9 @@ class BackendController extends Controller
                 'erp_webhook_secret' => ['nullable', 'string', 'max:255'],
                 'erp_price_level_id' => ['nullable', 'integer', 'min:1'],
                 'erp_warehouse_codes' => ['nullable', 'string', 'max:255'],
+                'erp_shipping_account_code' => ['nullable', 'string', 'max:30'],
+                'erp_account_gateway' => ['nullable', 'string', 'max:30'],
+                'erp_account_manual' => ['nullable', 'string', 'max:30'],
             ], ['erp_base_url.required_if' => 'Isi alamat API ERP sebelum menyalakan koneksi.']);
             $companyId = $this->activeCompanyId();
             if ($request->boolean('erp_enabled') && trim((string) ($validated['erp_api_key'] ?? '')) === '' && ! ErpConnection::settings($companyId)['has_key']) {

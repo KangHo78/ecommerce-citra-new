@@ -60,6 +60,9 @@ final class ErpConnection
             'price_level_id' => $s['erp_price_level_id'] ?? null,
             'warehouse_codes' => implode(', ', (array) ($s['erp_warehouse_codes'] ?? [])),
             'has_webhook_secret' => ! empty($s['erp_webhook_secret']),
+            'shipping_account_code' => (string) ($s['erp_shipping_account_code'] ?? ''),
+            'account_gateway' => (string) ($s['erp_account_gateway'] ?? ''),
+            'account_manual' => (string) ($s['erp_account_manual'] ?? ''),
             'synced_at' => $s['erp_catalog_synced_at'] ?? null,
             'last_error' => $s['erp_last_error'] ?? null,
             'last_result' => $s['erp_last_result'] ?? null,
@@ -74,6 +77,10 @@ final class ErpConnection
             'erp_base_url' => rtrim(trim((string) ($data['erp_base_url'] ?? '')), '/'),
             'erp_price_level_id' => isset($data['erp_price_level_id']) && $data['erp_price_level_id'] !== '' ? (int) $data['erp_price_level_id'] : null,
             'erp_warehouse_codes' => array_values(array_filter(array_map('trim', explode(',', (string) ($data['erp_warehouse_codes'] ?? ''))))),
+            // Pesanan (T2): akun pendapatan ongkir, akun kas/bank penerima pembayaran gateway dan transfer manual.
+            'erp_shipping_account_code' => trim((string) ($data['erp_shipping_account_code'] ?? '')),
+            'erp_account_gateway' => trim((string) ($data['erp_account_gateway'] ?? '')),
+            'erp_account_manual' => trim((string) ($data['erp_account_manual'] ?? '')),
         ];
         if (trim((string) ($data['erp_api_key'] ?? '')) !== '') {
             $values['erp_api_key'] = Crypt::encryptString(trim((string) $data['erp_api_key']));

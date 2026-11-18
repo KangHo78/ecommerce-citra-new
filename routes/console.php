@@ -3,6 +3,7 @@
 use App\Console\Commands\CheckOperations;
 use App\Console\Commands\CreateOperationalBackup;
 use App\Console\Commands\ExpireQuotations;
+use App\Console\Commands\PushErpOrders;
 use App\Console\Commands\ReleaseExpiredCommerceReservations;
 use App\Console\Commands\SendScheduledNewsletters;
 use App\Console\Commands\SyncErpCatalog;
@@ -51,4 +52,5 @@ Schedule::command(ReleaseExpiredCommerceReservations::class)->everyFiveMinutes()
 // ERP DK = sumber katalog: barang/harga/foto berubah tiap 15 menit, stok tiap 5 menit (webhook mempercepat).
 Schedule::command(SyncErpCatalog::class)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command(SyncErpCatalog::class, ['--stock'])->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command(PushErpOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('mobile-spa:analytics-prune')->dailyAt('02:15')->withoutOverlapping()->onOneServer();
