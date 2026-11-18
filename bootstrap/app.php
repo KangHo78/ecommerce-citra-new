@@ -5,6 +5,7 @@ use App\Http\Middleware\AdminPermission;
 use App\Http\Middleware\CompanyScope;
 use App\Http\Middleware\EnsureCheckoutAccess;
 use App\Http\Middleware\EnsureMobileSpaEnabled;
+use App\Http\Middleware\ErpManagedB2b;
 use App\Http\Middleware\LocalizeStorefrontUi;
 use App\Http\Middleware\RedirectMobileToSpa;
 use App\Http\Middleware\RequestContext;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminOnly::class,
             'admin.permission' => AdminPermission::class,
             'company.scope' => CompanyScope::class,
+            'erp.b2b' => ErpManagedB2b::class,
             'checkout.access' => EnsureCheckoutAccess::class,
             'mobile.spa' => EnsureMobileSpaEnabled::class,
         ]);

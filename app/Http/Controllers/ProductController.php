@@ -64,7 +64,7 @@ class ProductController extends Controller
             return null;
         }
 
-        return redirect()->route('products.index')->with('error', 'Barang perusahaan ini dikelola di ERP. Ubah di ERP, lalu tunggu sinkron atau klik Sinkron sekarang di Setting › Koneksi ERP.');
+        return redirect()->route('products.index')->with('erp_notice', 'Barang perusahaan ini dikelola di ERP. Ubah di ERP, lalu tunggu sinkron atau klik Sinkron sekarang di Setting › Koneksi ERP.');
     }
 
     public function index()

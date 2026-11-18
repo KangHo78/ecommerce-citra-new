@@ -267,6 +267,13 @@
         <div class="lg:pl-64 min-h-screen flex flex-col">
             @include('partials.topbar')
             <div class="mt-2">
+                @php($erpNotice = session('erp_notice') ?? \App\Http\Middleware\ErpManagedB2b::notice(request()))
+                @if ($erpNotice)
+                    {{-- Integrasi ERP DK: data yang dikelola ERP (barang, dokumen B2B) tidak diubah di toko. --}}
+                    <div role="alert" class="mx-4 sm:mx-6 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                        {{ $erpNotice }}
+                    </div>
+                @endif
                 @yield('content')
             </div>
         </div>

@@ -94,7 +94,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update')->middleware('throttle:password-reset');
 });
 
-Route::middleware(['auth', 'admin', 'company.scope'])->group(function () {
+Route::middleware(['auth', 'admin', 'company.scope', 'erp.b2b'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/', [BackendController::class, 'index'])->name('pages.index')->middleware('admin.permission:dashboard.index');
         Route::get('/dashboard2', [BackendController::class, 'dashboard2'])->name('pages.dashboard2')->middleware('admin.permission:dashboard.index');

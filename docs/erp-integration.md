@@ -51,3 +51,23 @@ Setiap kabar pesanan dari ERP membuat toko mengambil ulang SO-nya, lalu menyesua
 Setiap perubahan dicatat di riwayat status transaksi. Bila webhook terlewat, `php artisan erp:push-orders --refresh`
 (otomatis tiap jam) mengambil ulang status SO pesanan yang masih berjalan (60 hari terakhir).
 
+
+## Dokumen B2B
+
+Company yang tersambung membuat dan memproses dokumen B2B di ERP: penawaran, sales order, proforma, surat jalan,
+invoice B2B, dan pembayaran dokumen. Di admin toko, halaman B2B menampilkan keterangan "Dokumen B2B perusahaan ini
+dibuat dan diproses di ERP" beserta alamat ERP. Dokumen lama tetap bisa dilihat dan dicetak. Aksi buat, ubah, kirim,
+konversi, catat bayar, dan batal diarahkan kembali ke daftar dengan pesan yang sama (permintaan JSON = 423 + `erp_url`).
+Company yang tidak tersambung tidak berubah.
+
+## Invoice untuk pembeli
+
+Tombol Invoice di pesanan pembeli (web dan aplikasi ponsel) menampilkan PDF invoice ERP begitu pesanan ditagih di
+ERP. PDF diambil server toko dengan kunci API, jadi kunci tidak pernah sampai ke browser. Selama belum ditagih, atau
+bila ERP tidak bisa dihubungi, yang tampil invoice toko seperti biasa (`?shop=1` = selalu invoice toko).
+
+## Penjadwal
+
+Semua sinkron berkala butuh cron Laravel di server:
+`* * * * * cd /home/boq.co.id/public_html && /usr/local/lsws/lsphp83/bin/php artisan schedule:run >> /dev/null 2>&1`
+(terpasang untuk pengguna situs sejak 18/11/2026).
