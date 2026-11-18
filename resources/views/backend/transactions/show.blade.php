@@ -43,6 +43,9 @@
                 <p class="mt-1 text-xs {{ $transaction->erp_error ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400' }}">
                     ERP: {{ $transaction->erp_sales_order_code ?? 'belum terkirim' }}
                     &bull; {{ ['pending' => 'Menunggu kirim', 'ordered' => 'SO dibuat', 'paid' => 'Pembayaran tercatat', 'cancelled' => 'Dibatalkan'][$transaction->erp_state] ?? $transaction->erp_state }}
+                    @if ($transaction->erp_invoice_code)
+                        &bull; Invoice {{ $transaction->erp_invoice_code }}{{ $transaction->erp_invoice_paid ? ' (lunas)' : '' }}
+                    @endif
                     @if ($transaction->erp_error)
                         &bull; {{ $transaction->erp_error }}
                     @endif

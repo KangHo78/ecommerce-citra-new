@@ -7,7 +7,7 @@ use App\Services\Erp\ErpCatalogSync;
 use App\Services\Erp\ErpConnection;
 use App\Services\Erp\ErpOrderEvents;
 
-/** Isi webhook ERP → sinkron toko. Event pesanan (sales_order.*, sales_delivery.*, sales_invoice.*) ditangani tahap pesanan. */
+/** Isi webhook ERP → sinkron toko: katalog/stok di sini, event pesanan (sales_order.*, sales_delivery.*, sales_invoice.*) di ErpOrderEvents. */
 class ErpWebhookHandler
 {
     public function __construct(private ErpCatalogSync $sync) {}

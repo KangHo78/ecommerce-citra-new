@@ -53,4 +53,5 @@ Schedule::command(ReleaseExpiredCommerceReservations::class)->everyFiveMinutes()
 Schedule::command(SyncErpCatalog::class)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command(SyncErpCatalog::class, ['--stock'])->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command(PushErpOrders::class)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command(PushErpOrders::class, ['--refresh'])->hourly()->withoutOverlapping()->onOneServer();
 Schedule::command('mobile-spa:analytics-prune')->dailyAt('02:15')->withoutOverlapping()->onOneServer();
