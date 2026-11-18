@@ -132,7 +132,7 @@ final class ErpConnection
     public function download(string $url): string
     {
         try {
-            $res = $this->request()->accept('*/*')->get($url);
+            $res = $this->request()->accept('*/*')->get($this->url($url));
         } catch (ConnectionException $e) {
             throw new ErpException('ERP tidak bisa dihubungi: '.$e->getMessage());
         }
@@ -168,6 +168,14 @@ final class ErpConnection
     private function request(): PendingRequest
     {
         return Http::withToken($this->apiKey)->acceptJson()->timeout(30)->retry(2, 500, fn ($e) => $e instanceof ConnectionException, throw: false);
+    }
+
+    /** Alamat aplikasi ERP (untuk tautan "buka di ERP"): alamat API tanpa /api/v1. */
+    public static function webUrl(int $companyId): ?string
+    {
+        $base = trim((string) (CompanySetting::values($companyId)['erp_base_url'] ?? ''));
+
+        return $base === '' ? null : preg_replace('#/api(/v1)?/?$#', '', rtrim($base, '/'));
     }
 
     private function url(string $path): string
