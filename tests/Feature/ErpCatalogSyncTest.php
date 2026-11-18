@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Erp\ErpCatalogSync;
 use App\Services\Erp\ErpConnection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -90,5 +91,22 @@ class ErpCatalogSyncTest extends TestCase
 
         CompanySetting::setMany($this->company->id, ['erp_enabled' => '0']);
         $this->get(route('products.create'))->assertOk();
+    }
+
+    public function test_products_without_erp_price_sync_as_inactive_instead_of_failing(): void
+    {
+        Http::swap(new Factory);
+        Http::fake(['erp.test/api/v1/products*' => Http::response(['data' => [[
+            'id' => 40, 'code' => 'BRG-40', 'name' => 'Mur M8', 'category' => null, 'base_unit' => 'PCS', 'active' => true, 'weight' => null, 'description' => null, 'images' => [],
+            'variants' => [['id' => 70, 'sku' => 'MR-M8', 'name' => null, 'options' => [], 'base_price' => null, 'weight' => null, 'active' => true,
+                'prices' => [['price_level_id' => 2, 'unit' => 'PCS', 'price' => null]]]],
+        ]], 'meta' => ['page' => 1, 'per_page' => 100, 'total' => 1, 'last_page' => 1]]),
+            'erp.test/api/v1/stock*' => Http::response(['data' => [], 'meta' => ['page' => 1, 'per_page' => 100, 'total' => 0, 'last_page' => 1]])]);
+
+        app(ErpCatalogSync::class)->run(ErpConnection::for($this->company->id), true);
+
+        $product = Product::query()->where('company_id', $this->company->id)->where('erp_product_id', 40)->firstOrFail();
+        $this->assertSame('inactive', $product->status);
+        $this->assertSame(0.0, (float) ProductVariant::query()->where('erp_variant_id', 70)->value('price'));
     }
 }

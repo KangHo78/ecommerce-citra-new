@@ -345,6 +345,13 @@ class BackendController extends Controller
             CompanySetting::setMany($companyId, ['erp_last_error' => ['message' => $e->getMessage(), 'at' => now()->toIso8601String()]]);
 
             return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            // Data ERP yang belum bisa dipakai toko: tampilkan pesan, jangan halaman 500 (barang yang sudah tersimpan tetap).
+            report($e);
+            $message = 'Sinkron berhenti: '.mb_substr($e->getMessage(), 0, 300);
+            CompanySetting::setMany($companyId, ['erp_last_error' => ['message' => $message, 'at' => now()->toIso8601String()]]);
+
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', $message);
         }
     }
 

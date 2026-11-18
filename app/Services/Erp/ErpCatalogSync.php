@@ -115,22 +115,26 @@ final class ErpCatalogSync
             }
             // Varian yang dihapus/dinonaktifkan di ERP: stok 0 supaya tidak bisa dibeli (riwayat transaksi tetap).
             ProductVariant::query()->where('product_id', $product->id)->whereNotIn('id', $keep ?: [0])->update(['stock' => 0]);
+            // Belum ada harga sama sekali di ERP: tidak ditampilkan supaya tidak terjual Rp 0 (aktif lagi begitu berharga).
+            if ($keep !== [] && (float) ProductVariant::query()->whereIn('id', $keep)->max('price') <= 0) {
+                $product->forceFill(['status' => 'inactive'])->save();
+            }
 
             return count($keep);
         });
     }
 
-    /** Harga jual toko: level harga pilihan untuk satuan dasar, selain itu harga dasar varian. */
+    /** Harga jual toko: level harga pilihan untuk satuan dasar, selain itu harga dasar varian; belum diisi di ERP = 0. */
     private function price(ErpConnection $erp, array $v, string $baseUnit): string
     {
         if ($erp->priceLevelId !== null) {
             $level = collect($v['prices'] ?? [])->first(fn ($p) => (int) $p['price_level_id'] === $erp->priceLevelId && ($p['unit'] ?? $baseUnit) === $baseUnit);
-            if ($level) {
+            if ($level && is_numeric($level['price'] ?? null)) {
                 return (string) $level['price'];
             }
         }
 
-        return (string) ($v['base_price'] ?? '0');
+        return is_numeric($v['base_price'] ?? null) ? (string) $v['base_price'] : '0';
     }
 
     /** Opsi varian toko (tabel variants: nama + nilai) dari opsi varian ERP; barang satu varian = "Varian: Standar". */
