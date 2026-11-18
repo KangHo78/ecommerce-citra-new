@@ -38,6 +38,16 @@
                     &bull; <span class="text-violet-600 dark:text-violet-400 font-medium">Manual Admin</span>
                 @endif
             </p>
+            @if ($transaction->erp_state)
+                {{-- Integrasi ERP DK: SO tertaut, atau galat terakhir (dicoba ulang otomatis tiap 5 menit). --}}
+                <p class="mt-1 text-xs {{ $transaction->erp_error ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400' }}">
+                    ERP: {{ $transaction->erp_sales_order_code ?? 'belum terkirim' }}
+                    &bull; {{ ['pending' => 'Menunggu kirim', 'ordered' => 'SO dibuat', 'paid' => 'Pembayaran tercatat', 'cancelled' => 'Dibatalkan'][$transaction->erp_state] ?? $transaction->erp_state }}
+                    @if ($transaction->erp_error)
+                        &bull; {{ $transaction->erp_error }}
+                    @endif
+                </p>
+            @endif
         </div>
         <div class="flex flex-wrap gap-2 shrink-0">
             <a href="{{ route('transactions.shipping-label', $transaction) }}" target="_blank"

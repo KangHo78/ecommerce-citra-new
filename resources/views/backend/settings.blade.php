@@ -522,6 +522,24 @@
                                     <input type="text" name="erp_warehouse_codes" maxlength="255" value="{{ old('erp_warehouse_codes', $erp['warehouse_codes']) }}" placeholder="Kosong = semua gudang; mis. GD-PST, GD-SBY" class="{{ $inputClass }}">
                                 </div>
                             </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Pesanan ke ERP</h3>
+                                <p class="text-xs text-slate-400 mb-3">Checkout menjadi sales order di ERP (stok dipesan di ERP), pembayaran lunas menjadi DP, batal/kedaluwarsa membatalkan SO. Isi kode akun dari bagan akun ERP.</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Akun pendapatan ongkir</label>
+                                        <input type="text" name="erp_shipping_account_code" maxlength="30" value="{{ old('erp_shipping_account_code', $erp['shipping_account_code']) }}" placeholder="mis. 4105" class="{{ $inputClass }}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Akun penampung Midtrans</label>
+                                        <input type="text" name="erp_account_gateway" maxlength="30" value="{{ old('erp_account_gateway', $erp['account_gateway']) }}" placeholder="mis. 1104" class="{{ $inputClass }}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 uppercase tracking-wide">Rekening transfer manual</label>
+                                        <input type="text" name="erp_account_manual" maxlength="30" value="{{ old('erp_account_manual', $erp['account_manual']) }}" placeholder="mis. 1102" class="{{ $inputClass }}">
+                                    </div>
+                                </div>
+                            </div>
                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                 Alamat webhook untuk ERP: <code class="select-all">{{ route('erp.webhook', ['company' => $activeCompany?->slug ?? '-']) }}</code>
                             </p>

@@ -7,6 +7,7 @@ use App\Models\MainCategory;
 use App\Models\StoreSetting;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Observers\ErpTransactionObserver;
 use App\Services\StorefrontNavigationService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Integrasi ERP DK: pesanan company tersambung dikirim ke ERP (SO, DP, batal).
+        Transaction::observe(ErpTransactionObserver::class);
         // Rate limit untuk Open Catalog API: per-IP, longgar (anti scraping/DoS),
         // bukan untuk autentikasi. Lihat docs/prd-company-catalog-api.md §1.
         RateLimiter::for('api', function (Request $request) {
