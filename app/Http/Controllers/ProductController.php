@@ -15,8 +15,10 @@ use App\Models\ReturnRequestItem;
 use App\Models\SpecificationTemplate;
 use App\Models\TransactionDetail;
 use App\Models\Variant;
+use App\Services\Erp\ErpConnection;
 use App\Services\ImageOptimizer;
 use App\Services\ProductSpecificationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -52,6 +54,19 @@ class ProductController extends Controller
         'material',
     ];
 
+    /**
+     * Company yang tersambung ke ERP DK: barang, harga, foto, dan stok dikelola di ERP (disinkron ke toko), jadi tambah/
+     * ubah/hapus/impor barang di toko ditolak supaya tidak tertimpa sinkron berikutnya.
+     */
+    private function blockedByErp(): ?RedirectResponse
+    {
+        if (! ErpConnection::enabled($this->activeCompanyId())) {
+            return null;
+        }
+
+        return redirect()->route('products.index')->with('error', 'Barang perusahaan ini dikelola di ERP. Ubah di ERP, lalu tunggu sinkron atau klik Sinkron sekarang di Setting › Koneksi ERP.');
+    }
+
     public function index()
     {
         $products = Product::where('company_id', $this->activeCompanyId())
@@ -65,6 +80,9 @@ class ProductController extends Controller
 
     public function create()
     {
+        if ($blocked = $this->blockedByErp()) {
+            return $blocked;
+        }
         $mainCategories = MainCategory::query()->orderBy('name')->get();
         $legacyCategories = Category::query()->with('parent')->orderBy('name')->get();
         $categoryDetails = CategoryDetail::query()
@@ -122,6 +140,9 @@ class ProductController extends Controller
 
     public function store(Request $request, ImageOptimizer $imageOptimizer)
     {
+        if ($blocked = $this->blockedByErp()) {
+            return $blocked;
+        }
         $request->merge([
             'variants' => $this->normalizeVariantNumericFields($request->input('variants', [])),
         ]);
@@ -306,6 +327,9 @@ class ProductController extends Controller
 
     public function import(Request $request)
     {
+        if ($blocked = $this->blockedByErp()) {
+            return $blocked;
+        }
         $request->validate([
             'import_file' => ['required', 'file', 'mimes:xlsx,xls'],
         ], [
@@ -573,6 +597,9 @@ class ProductController extends Controller
     public function update(Request $request, Product $product, ImageOptimizer $imageOptimizer)
     {
         $this->guardCompanyOwnership($product->company_id);
+        if ($blocked = $this->blockedByErp()) {
+            return $blocked;
+        }
 
         $request->merge([
             'variants' => $this->normalizeVariantNumericFields($request->input('variants', [])),
@@ -773,6 +800,9 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $this->guardCompanyOwnership($product->company_id);
+        if ($blocked = $this->blockedByErp()) {
+            return $blocked;
+        }
 
         $imageOptimizer = app(ImageOptimizer::class);
         $imageOptimizer->deletePublicFile($product->specification_image);

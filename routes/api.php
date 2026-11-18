@@ -9,9 +9,12 @@ use App\Http\Controllers\Api\Mobile\V1\MobileSessionController;
 use App\Http\Controllers\Api\Mobile\V1\MobileTelemetryController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Erp\ErpWebhookController;
 use App\Http\Controllers\MidtransController;
 use Illuminate\Support\Facades\Route;
 
+// Webhook ERP DK per company (tanda tangan HMAC, lihat ErpWebhookController).
+Route::post('erp/webhook/{company}', ErpWebhookController::class)->name('erp.webhook')->middleware('throttle:120,1');
 Route::post('midtrans/notification', [MidtransController::class, 'notification'])
     ->middleware('throttle:120,1')
     ->name('midtrans.notification');

@@ -103,6 +103,8 @@ Route::middleware(['auth', 'admin', 'company.scope'])->group(function () {
         Route::get('/datatables', [BackendController::class, 'datatables'])->name('pages.datatables')->middleware('admin.permission:dashboard.index');
         Route::get('/settings', [BackendController::class, 'settings'])->name('pages.settings')->middleware('admin.permission:store_settings.index,store_settings.edit');
         Route::post('/settings', [BackendController::class, 'updateSettings'])->name('pages.settings.update')->middleware('admin.permission:store_settings.edit');
+        Route::post('/settings/erp/test', [BackendController::class, 'erpTest'])->name('pages.settings.erp-test')->middleware('admin.permission:store_settings.edit');
+        Route::post('/settings/erp/sync', [BackendController::class, 'erpSync'])->name('pages.settings.erp-sync')->middleware('admin.permission:store_settings.edit');
         Route::prefix('settings/whatsapp-gateway')->name('whatsapp-gateway.')->middleware('admin.permission:store_settings.edit')->group(function () {
             Route::post('/', [AdminWhatsappGatewayController::class, 'update'])->name('update');
             Route::post('/prepare', [AdminWhatsappGatewayController::class, 'prepare'])->name('prepare');

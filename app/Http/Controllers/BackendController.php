@@ -11,6 +11,9 @@ use App\Models\StoreSetting;
 use App\Models\Transaction;
 use App\Models\TransactionDetail;
 use App\Models\User;
+use App\Services\Erp\ErpCatalogSync;
+use App\Services\Erp\ErpConnection;
+use App\Services\Erp\ErpException;
 use App\Services\ImageOptimizer;
 use App\Support\BoqiFaq;
 use Illuminate\Http\Request;
@@ -290,6 +293,7 @@ class BackendController extends Controller
         return view('backend.settings', [
             'storeSettings' => $storeSettings,
             'companySettings' => CompanySetting::valuesWithDefaults($this->activeCompanyId()),
+            'erp' => ErpConnection::settings($this->activeCompanyId()),
             'location' => StoreLocation::query()
                 ->where('company_id', $this->activeCompanyId())
                 ->where('is_active', true)
@@ -308,9 +312,63 @@ class BackendController extends Controller
         ]);
     }
 
+    /** Tes koneksi ERP: panggil daftar barang (1 baris) dengan kunci tersimpan. */
+    public function erpTest()
+    {
+        $erp = ErpConnection::configured($this->activeCompanyId());
+        if (! $erp) {
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', 'Isi alamat dan kunci API ERP dulu.');
+        }
+        try {
+            $total = $erp->get('/products', ['per_page' => 1])['meta']['total'] ?? 0;
+
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('success', "Terhubung ke ERP: {$total} barang bisa dibaca.");
+        } catch (ErpException $e) {
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', $e->getMessage());
+        }
+    }
+
+    /** Sinkron sekarang: katalog + stok dari ERP untuk company aktif (penuh). */
+    public function erpSync(ErpCatalogSync $sync)
+    {
+        $companyId = $this->activeCompanyId();
+        $erp = ErpConnection::for($companyId);
+        if (! $erp) {
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', 'Nyalakan koneksi ERP dulu.');
+        }
+        try {
+            $r = $sync->run($erp, true);
+
+            return redirect()->route('pages.settings', ['tab' => 'erp'])
+                ->with('success', "Sinkron selesai: {$r['products']} barang, {$r['variants']} varian, stok {$r['stock']} varian diperbarui, {$r['inactive']} barang dinonaktifkan.");
+        } catch (ErpException $e) {
+            CompanySetting::setMany($companyId, ['erp_last_error' => ['message' => $e->getMessage(), 'at' => now()->toIso8601String()]]);
+
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('error', $e->getMessage());
+        }
+    }
+
     public function updateSettings(Request $request, ImageOptimizer $imageOptimizer)
     {
         $section = (string) $request->input('section', 'store');
+
+        if ($section === 'erp') {
+            $validated = $request->validate([
+                'erp_enabled' => ['nullable', 'boolean'],
+                'erp_base_url' => ['required_if:erp_enabled,1', 'nullable', 'url:https,http', 'max:255'],
+                'erp_api_key' => ['nullable', 'string', 'max:255'],
+                'erp_webhook_secret' => ['nullable', 'string', 'max:255'],
+                'erp_price_level_id' => ['nullable', 'integer', 'min:1'],
+                'erp_warehouse_codes' => ['nullable', 'string', 'max:255'],
+            ], ['erp_base_url.required_if' => 'Isi alamat API ERP sebelum menyalakan koneksi.']);
+            $companyId = $this->activeCompanyId();
+            if ($request->boolean('erp_enabled') && trim((string) ($validated['erp_api_key'] ?? '')) === '' && ! ErpConnection::settings($companyId)['has_key']) {
+                return back()->withErrors(['erp_api_key' => 'Isi kunci API ERP sebelum menyalakan koneksi.'])->withInput();
+            }
+            ErpConnection::save($companyId, [...$validated, 'erp_enabled' => $request->boolean('erp_enabled')]);
+
+            return redirect()->route('pages.settings', ['tab' => 'erp'])->with('success', 'Koneksi ERP disimpan.');
+        }
 
         if ($section === 'manual_payment') {
             $validated = $request->validate([
