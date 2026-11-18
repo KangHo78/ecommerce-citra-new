@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\CompanySetting;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Erp\ErpCatalogSync;
 use App\Services\Erp\ErpConnection;
@@ -108,5 +109,43 @@ class ErpCatalogSyncTest extends TestCase
         $product = Product::query()->where('company_id', $this->company->id)->where('erp_product_id', 40)->firstOrFail();
         $this->assertSame('inactive', $product->status);
         $this->assertSame(0.0, (float) ProductVariant::query()->where('erp_variant_id', 70)->value('price'));
+    }
+
+    public function test_products_deleted_in_erp_are_deleted_or_hidden_when_already_sold(): void
+    {
+        $erp = ErpConnection::for($this->company->id);
+        app(ErpCatalogSync::class)->run($erp, true);
+        $product = Product::query()->where('company_id', $this->company->id)->where('erp_product_id', 12)->firstOrFail();
+        $body = json_encode(['id' => 'd1', 'event' => 'product.deleted', 'data' => ['product_ids' => [12], 'codes' => ['BRG-12'], 'skus' => ['BT-M10']]]);
+        $ts = (string) time();
+        $send = fn () => $this->call('POST', "/api/erp/webhook/{$this->company->slug}", [], [], [], [
+            'CONTENT_TYPE' => 'application/json', 'HTTP_X_ERP_TIMESTAMP' => $ts, 'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_ERP_SIGNATURE' => 'sha256='.hash_hmac('sha256', "{$ts}.{$body}", 'rahasia')], $body);
+
+        // Sudah pernah dibeli: disembunyikan, riwayat tetap.
+        $tx = Transaction::withoutEvents(fn () => Transaction::create(['company_id' => $this->company->id, 'source' => 'checkout',
+            'invoice_no' => 'INV-DEL-1', 'order_id' => 'ORD-DEL-1', 'status' => 'selesai', 'subtotal_amount' => 1400, 'shipping_cost' => 0, 'discount_amount' => 0, 'grand_total' => 1400]));
+        $detail = $tx->details()->create(['product_id' => $product->id, 'product_name' => 'Baut hex M10', 'sku' => 'BT-M10', 'price' => 1400, 'quantity' => 1, 'subtotal' => 1400, 'discount_amount' => 0]);
+        $send()->assertOk();
+        $this->assertSame('inactive', $product->fresh()->status);
+        $this->assertSame(0, (int) ProductVariant::query()->where('erp_variant_id', 31)->value('stock'));
+
+        // Belum pernah dibeli: dihapus.
+        $detail->delete();
+        $send()->assertOk();
+        $this->assertNull(Product::query()->find($product->id));
+    }
+
+    public function test_full_sync_removes_products_missing_from_erp(): void
+    {
+        app(ErpCatalogSync::class)->run(ErpConnection::for($this->company->id), true);
+        Http::swap(new Factory);
+        Http::fake(['erp.test/api/v1/products*' => Http::response(['data' => [], 'meta' => ['page' => 1, 'per_page' => 100, 'total' => 0, 'last_page' => 1]]),
+            'erp.test/api/v1/stock*' => Http::response(['data' => [], 'meta' => ['page' => 1, 'per_page' => 100, 'total' => 0, 'last_page' => 1]])]);
+
+        $stats = app(ErpCatalogSync::class)->run(ErpConnection::for($this->company->id), true);
+
+        $this->assertSame(1, $stats['inactive']);
+        $this->assertFalse(Product::query()->where('company_id', $this->company->id)->where('erp_product_id', 12)->exists());
     }
 }

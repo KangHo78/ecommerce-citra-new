@@ -7,7 +7,9 @@ use App\Models\CompanySetting;
 use App\Models\MainCategory;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\TransactionDetail;
 use App\Models\Variant;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -33,8 +35,9 @@ final class ErpCatalogSync
             $seen[] = (int) $row['id'];
         }
         if ($full) {
-            $stats['inactive'] = Product::query()->where('company_id', $erp->companyId)->whereNotNull('erp_product_id')
-                ->whereNotIn('erp_product_id', $seen ?: [0])->where('status', 'active')->update(['status' => 'inactive']);
+            // Barang yang sudah tidak ada di ERP (terlewat webhook product.deleted).
+            $stats['inactive'] = $this->remove($erp, Product::query()->where('company_id', $erp->companyId)->whereNotNull('erp_product_id')
+                ->whereNotIn('erp_product_id', $seen ?: [0])->pluck('erp_product_id')->all());
         }
         $stats['stock'] = $this->stock($erp);
 
@@ -44,6 +47,42 @@ final class ErpCatalogSync
         ]);
 
         return $stats;
+    }
+
+    /**
+     * Barang dihapus di ERP: dihapus juga di toko; yang sudah pernah dibeli (riwayat transaksi) atau masih dirujuk data lain
+     * cukup dinonaktifkan supaya riwayat pesanan tetap utuh. Hasil = jumlah barang yang dihapus/dinonaktifkan.
+     *
+     * @param  list<int>  $erpProductIds
+     */
+    public function remove(ErpConnection $erp, array $erpProductIds): int
+    {
+        $count = 0;
+        $products = Product::query()->where('company_id', $erp->companyId)->whereIn('erp_product_id', array_map('intval', $erpProductIds))->get();
+        foreach ($products as $product) {
+            $sold = TransactionDetail::query()->where('product_id', $product->id)->exists();
+            if (! $sold) {
+                try {
+                    DB::transaction(function () use ($product) {
+                        $images = $product->productVariants()->pluck('image')->filter()->all();
+                        $product->delete();
+                        DB::afterCommit(fn () => Storage::disk('public')->delete(array_values(array_filter($images, fn ($p) => str_starts_with((string) $p, 'products/erp/')))));
+                    });
+                    $count++;
+
+                    continue;
+                } catch (QueryException) {
+                    // Masih dirujuk data lain (mis. dokumen B2B lama): dinonaktifkan saja.
+                }
+            }
+            if ($product->status !== 'inactive') {
+                $product->forceFill(['status' => 'inactive'])->save();
+                ProductVariant::query()->where('product_id', $product->id)->update(['stock' => 0]);
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /** Stok tersedia per varian = Σ tersedia gudang sumber (minus = 0); varian toko tanpa saldo di ERP = 0. */

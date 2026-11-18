@@ -10,7 +10,7 @@ diambil dari ERP, dan setiap pesanan toko dicatat di ERP. Bawaannya mati; compan
    Pengguna integrasi butuh izin buat/konfirmasi/batal SO dan buat DP. Bila harga jual dikunci di ERP, beri juga izin
    ubah harga (harga toko termasuk diskon/flash sale).
 2. Di ERP, buat webhook ke alamat yang tampil di toko (Setting › Koneksi ERP), event `product.changed`,
-   `stock.changed`, `sales_order.updated`, `sales_delivery.updated`, `sales_delivery.received`,
+   `product.deleted`, `stock.changed`, `sales_order.updated`, `sales_delivery.updated`, `sales_delivery.received`,
    `sales_invoice.updated`, dan `sales_invoice.paid`, lalu salin rahasianya. Kunci API juga butuh
    `sales_invoices.read` untuk status invoice.
 3. Di toko, Setting › Koneksi ERP: isi alamat API (`https://<erp>/api/v1`), kunci API, rahasia webhook, id level harga
@@ -21,6 +21,9 @@ diambil dari ERP, dan setiap pesanan toko dicatat di ERP. Bawaannya mati; compan
 
 - Sinkron otomatis: barang/harga/foto tiap 15 menit (hanya yang berubah), stok tiap 5 menit, dan seketika lewat webhook.
 - Stok toko = stok tersedia ERP (on hand − dipesan) dijumlah dari gudang sumber, minimal 0.
+- Barang dihapus di ERP = ikut dihapus di toko (webhook `product.deleted`, pilih event ini di webhook ERP). Barang yang
+  sudah pernah dibeli hanya disembunyikan (stok 0) supaya riwayat pesanan tetap utuh. Tarik penuh tiap jam ikut
+  membersihkan barang yang terlewat webhook. Barang dinonaktifkan di ERP = disembunyikan di toko.
 - Barang company tersambung tidak bisa ditambah, diubah, dihapus, atau diimpor di admin toko; ubah di ERP.
 - Perintah manual: `php artisan erp:sync [--company=ID] [--full] [--stock]`.
 
